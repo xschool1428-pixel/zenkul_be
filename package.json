@@ -1,0 +1,38 @@
+{
+  "name": "school-saas-api",
+  "version": "1.0.0",
+  "description": "Multi-school education SaaS API — Express, MongoDB, Socket.io, JWT, Razorpay",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon",
+    "seed": "node src/scripts/seed.js",
+    "test": "node --test tests/",
+    "test:ci": "cross-env CI=true node --test tests/"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.3",
+    "morgan": "^1.10.0",
+    "razorpay": "^2.9.5",
+    "socket.io": "^4.8.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "nodemon": "^3.1.9",
+    "supertest": "^7.0.0"
+  }
+}
