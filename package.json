@@ -8,6 +8,7 @@
     "start": "node src/server.js",
     "dev": "nodemon",
     "seed": "node src/scripts/seed.js",
+    "mongo:check": "node src/scripts/checkMongo.js",
     "test": "node --test tests/",
     "test:ci": "cross-env CI=true node --test tests/"
   },

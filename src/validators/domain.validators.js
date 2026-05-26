@@ -172,7 +172,7 @@ export const promoteStudentSchema = Joi.object({
   body: Joi.object({
     newClassId: objectId.required(),
     newSectionId: objectId.required(),
-    newYearId: objectId.optional(),
+    newYearId: objectId.required(),
   }).required(),
 });
 

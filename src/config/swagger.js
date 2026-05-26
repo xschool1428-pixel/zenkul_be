@@ -3,6 +3,11 @@ import { config } from './index.js';
 import { swaggerPaths } from './swagger/paths.js';
 
 const API_PREFIX = '/api';
+const objectIdSchema = {
+  type: 'string',
+  pattern: '^[a-f0-9]{24}$',
+  example: '6a145fbd3d6747a666b7ae3d',
+};
 
 const swaggerDefinition = {
   openapi: '3.0.3',
@@ -134,6 +139,357 @@ List APIs: \`?page=1&limit=20\` → response includes \`meta\` object.
           firstName: { type: 'string' },
           lastName: { type: 'string' },
           phone: { type: 'string' },
+        },
+      },
+      CreateSchoolRequest: {
+        type: 'object',
+        required: ['organizationId', 'name', 'code', 'email'],
+        properties: {
+          organizationId: objectIdSchema,
+          name: { type: 'string', minLength: 2, maxLength: 200, example: 'Demo Public School' },
+          code: { type: 'string', minLength: 2, maxLength: 50, example: 'SCH-001' },
+          email: { type: 'string', format: 'email', example: 'office@demoschool.edu' },
+          phone: { type: 'string', example: '9876543210' },
+          city: { type: 'string', example: 'Mumbai' },
+        },
+      },
+      UpdateSchoolRequest: {
+        type: 'object',
+        minProperties: 1,
+        properties: {
+          name: { type: 'string', minLength: 2, maxLength: 200, example: 'Demo Public School Senior Wing' },
+          email: { type: 'string', format: 'email', example: 'office@demoschool.edu' },
+          phone: { type: 'string', example: '9876543210' },
+          city: { type: 'string', example: 'Mumbai' },
+        },
+      },
+      CreateStudentRequest: {
+        type: 'object',
+        required: ['admissionNumber'],
+        properties: {
+          admissionNumber: { type: 'string', example: 'ADM-2026-001' },
+          userId: objectIdSchema,
+          admissionDate: { type: 'string', format: 'date', example: '2026-04-01' },
+          profile: {
+            type: 'object',
+            properties: {
+              firstName: { type: 'string', example: 'Aarav' },
+              lastName: { type: 'string', example: 'Sharma' },
+              dateOfBirth: { type: 'string', format: 'date', example: '2015-08-12' },
+              gender: { type: 'string', example: 'male' },
+              aadhaar: { type: 'string', pattern: '^\\d{12}$', example: '123456789012' },
+            },
+          },
+          enrollment: {
+            type: 'object',
+            required: ['academicYearId', 'schoolClassId', 'sectionId'],
+            properties: {
+              academicYearId: objectIdSchema,
+              schoolClassId: objectIdSchema,
+              sectionId: objectIdSchema,
+              rollNumber: { type: 'string', example: '12' },
+            },
+          },
+          guardian: {
+            type: 'object',
+            required: ['phone'],
+            properties: {
+              firstName: { type: 'string', example: 'Raj' },
+              lastName: { type: 'string', example: 'Sharma' },
+              phone: { type: 'string', example: '9876543210' },
+              email: { type: 'string', format: 'email', example: 'parent@example.com' },
+              relationship: { type: 'string', example: 'father' },
+              aadhaar: { type: 'string', pattern: '^\\d{12}$', example: '234567890123' },
+            },
+          },
+        },
+      },
+      UpdateStudentRequest: {
+        type: 'object',
+        minProperties: 1,
+        properties: {
+          status: {
+            type: 'string',
+            enum: ['active', 'inactive', 'graduated', 'transferred'],
+            example: 'active',
+          },
+          admissionNumber: { type: 'string', example: 'ADM-2026-001' },
+          profile: {
+            type: 'object',
+            additionalProperties: true,
+            example: { firstName: 'Aarav', lastName: 'Sharma' },
+          },
+        },
+      },
+      CreateEnrollmentRequest: {
+        type: 'object',
+        required: ['academicYearId', 'schoolClassId', 'sectionId'],
+        properties: {
+          studentId: objectIdSchema,
+          academicYearId: objectIdSchema,
+          schoolClassId: objectIdSchema,
+          sectionId: objectIdSchema,
+          rollNumber: { type: 'string', example: '15' },
+        },
+      },
+      PromoteStudentRequest: {
+        type: 'object',
+        required: ['newClassId', 'newSectionId', 'newYearId'],
+        properties: {
+          newClassId: objectIdSchema,
+          newSectionId: objectIdSchema,
+          newYearId: objectIdSchema,
+        },
+      },
+      CreateTeacherRequest: {
+        type: 'object',
+        required: ['userId', 'employeeCode'],
+        properties: {
+          userId: objectIdSchema,
+          employeeCode: { type: 'string', example: 'T-002' },
+          joiningDate: { type: 'string', format: 'date', example: '2025-06-01' },
+          qualification: { type: 'string', example: 'B.Ed, M.Sc Mathematics' },
+          department: { type: 'string', example: 'Mathematics' },
+          employmentType: {
+            type: 'string',
+            enum: ['full_time', 'part_time', 'contract'],
+            example: 'full_time',
+          },
+        },
+      },
+      UpdateTeacherRequest: {
+        type: 'object',
+        minProperties: 1,
+        properties: {
+          qualification: { type: 'string', example: 'B.Ed, M.Sc Mathematics' },
+          department: { type: 'string', example: 'Mathematics' },
+          status: { type: 'string', example: 'active' },
+          employmentType: {
+            type: 'string',
+            enum: ['full_time', 'part_time', 'contract'],
+            example: 'contract',
+          },
+        },
+      },
+      CreateSubjectRequest: {
+        type: 'object',
+        required: ['code', 'name'],
+        properties: {
+          code: { type: 'string', example: 'SCI' },
+          name: { type: 'string', example: 'Science' },
+          description: { type: 'string', example: 'Integrated science for middle school' },
+          isElective: { type: 'boolean', example: false },
+        },
+      },
+      UpdateSubjectRequest: {
+        type: 'object',
+        minProperties: 1,
+        properties: {
+          code: { type: 'string', example: 'SCI' },
+          name: { type: 'string', example: 'General Science' },
+          description: { type: 'string', example: 'Updated description' },
+        },
+      },
+      CreateGuardianRequest: {
+        type: 'object',
+        required: ['firstName', 'lastName', 'phone'],
+        properties: {
+          firstName: { type: 'string', example: 'Raj' },
+          lastName: { type: 'string', example: 'Sharma' },
+          phone: { type: 'string', example: '9876543210' },
+          email: { type: 'string', format: 'email', example: 'guardian@example.com' },
+          aadhaar: { type: 'string', pattern: '^\\d{12}$', example: '234567890123' },
+        },
+      },
+      LinkGuardianRequest: {
+        type: 'object',
+        required: ['guardianId'],
+        properties: {
+          guardianId: objectIdSchema,
+          relationship: { type: 'string', example: 'father', default: 'guardian' },
+          isPrimary: { type: 'boolean', example: true },
+        },
+      },
+      CreateAcademicYearRequest: {
+        type: 'object',
+        required: ['name', 'startDate', 'endDate'],
+        properties: {
+          name: { type: 'string', example: '2026-2027' },
+          startDate: { type: 'string', format: 'date', example: '2026-04-01' },
+          endDate: { type: 'string', format: 'date', example: '2027-03-31' },
+          isCurrent: { type: 'boolean', example: true },
+        },
+      },
+      CreateSchoolClassRequest: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name: { type: 'string', example: 'Class 6' },
+          sortOrder: { type: 'integer', example: 6 },
+        },
+      },
+      CreateSectionRequest: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name: { type: 'string', example: 'A' },
+          capacity: { type: 'integer', minimum: 1, example: 40 },
+        },
+      },
+      CreateTermRequest: {
+        type: 'object',
+        required: ['academicYearId', 'name', 'code', 'startDate', 'endDate'],
+        properties: {
+          academicYearId: objectIdSchema,
+          name: { type: 'string', example: 'Term 1' },
+          code: { type: 'string', example: 'T1' },
+          startDate: { type: 'string', format: 'date', example: '2026-04-01' },
+          endDate: { type: 'string', format: 'date', example: '2026-09-30' },
+          sortOrder: { type: 'integer', default: 1, example: 1 },
+          isCurrent: { type: 'boolean', default: false, example: true },
+        },
+      },
+      MarkAttendanceRequest: {
+        type: 'object',
+        required: ['studentId', 'attendanceDate', 'status'],
+        properties: {
+          studentId: objectIdSchema,
+          attendanceDate: { type: 'string', format: 'date', example: '2026-06-10' },
+          status: {
+            type: 'string',
+            enum: ['present', 'absent', 'late', 'excused', 'half_day'],
+            example: 'present',
+          },
+          remarks: { type: 'string', example: 'Arrived on time' },
+        },
+      },
+      CreateChapterRequest: {
+        type: 'object',
+        required: ['academicYearId', 'subjectId', 'chapterNumber', 'chapterName'],
+        properties: {
+          academicYearId: objectIdSchema,
+          subjectId: objectIdSchema,
+          schoolClassId: objectIdSchema,
+          chapterNumber: { type: 'integer', minimum: 1, example: 1 },
+          chapterName: { type: 'string', example: 'Numbers and Place Value' },
+          topics: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['name'],
+              properties: {
+                name: { type: 'string', example: 'Place value up to lakhs' },
+                sortOrder: { type: 'integer', example: 1 },
+              },
+            },
+          },
+          plannedHours: { type: 'number', example: 8 },
+        },
+      },
+      UpdateRatingRequest: {
+        type: 'object',
+        minProperties: 1,
+        properties: {
+          performance: {
+            type: 'string',
+            enum: ['excellent', 'very_good', 'good', 'satisfactory', 'needs_improvement', 'unsatisfactory'],
+            example: 'good',
+          },
+          score: { type: 'number', minimum: 0, example: 42 },
+          maxScore: { type: 'number', minimum: 1, example: 50 },
+          flag: {
+            type: 'string',
+            enum: ['normal', 'on_track', 'improvement_needed', 'concern', 'excellence', 'remedial'],
+            example: 'on_track',
+          },
+          remarks: { type: 'string', maxLength: 2000, example: 'Participates well in class' },
+          chapter: { type: 'string', example: 'Numbers and Place Value' },
+          topic: { type: 'string', example: 'Comparing numbers' },
+          ratedDate: { type: 'string', format: 'date', example: '2026-05-15' },
+          status: { type: 'string', enum: ['draft', 'published', 'archived'], example: 'published' },
+        },
+      },
+      CreateFeeCategoryRequest: {
+        type: 'object',
+        required: ['code', 'name'],
+        properties: {
+          code: { type: 'string', example: 'TRANSPORT' },
+          name: { type: 'string', example: 'Transport Fee' },
+          description: { type: 'string', example: 'Monthly transport charges' },
+        },
+      },
+      CreateFeeStructureRequest: {
+        type: 'object',
+        required: ['feeCategoryId', 'academicYearId', 'amountPaise'],
+        properties: {
+          feeCategoryId: objectIdSchema,
+          academicYearId: objectIdSchema,
+          schoolClassId: objectIdSchema,
+          amountPaise: { type: 'integer', minimum: 0, example: 250000 },
+          dueDayOfMonth: { type: 'integer', minimum: 1, maximum: 31, example: 10 },
+        },
+      },
+      CreateExamRequest: {
+        type: 'object',
+        required: ['name', 'academicYearId'],
+        properties: {
+          name: { type: 'string', example: 'Mid Term Exam' },
+          academicYearId: objectIdSchema,
+          examType: { type: 'string', example: 'mid_term' },
+          startDate: { type: 'string', format: 'date', example: '2026-09-10' },
+          endDate: { type: 'string', format: 'date', example: '2026-09-15' },
+        },
+      },
+      UpsertExamResultRequest: {
+        type: 'object',
+        required: ['examId', 'studentId', 'subjectId'],
+        properties: {
+          examId: objectIdSchema,
+          studentId: objectIdSchema,
+          subjectId: objectIdSchema,
+          marksObtained: { type: 'number', minimum: 0, example: 42 },
+          grade: { type: 'string', example: 'A' },
+          isAbsent: { type: 'boolean', example: false },
+          remarks: { type: 'string', example: 'Strong analytical skills' },
+          published: { type: 'boolean', example: true },
+        },
+      },
+      CreateInvoiceRequest: {
+        type: 'object',
+        required: ['studentId', 'academicYearId', 'dueAt', 'lines'],
+        properties: {
+          studentId: objectIdSchema,
+          academicYearId: objectIdSchema,
+          dueAt: { type: 'string', format: 'date-time', example: '2026-06-10T00:00:00.000Z' },
+          lines: {
+            type: 'array',
+            minItems: 1,
+            items: {
+              type: 'object',
+              required: ['description', 'lineTotalPaise'],
+              properties: {
+                description: { type: 'string', example: 'Term 1 tuition fee' },
+                lineTotalPaise: { type: 'integer', minimum: 1, example: 150000 },
+                feeCategoryId: objectIdSchema,
+              },
+            },
+          },
+        },
+      },
+      InitiatePlatformPaymentRequest: {
+        type: 'object',
+        properties: {
+          idempotencyKey: { type: 'string', example: 'platform-billing-2026-06' },
+          seatCount: { type: 'integer', minimum: 1, example: 125 },
+        },
+      },
+      VerifyPaymentRequest: {
+        type: 'object',
+        required: ['razorpay_order_id', 'razorpay_payment_id', 'razorpay_signature'],
+        properties: {
+          razorpay_order_id: { type: 'string', example: 'order_Q1AbCdEfGhIjKl' },
+          razorpay_payment_id: { type: 'string', example: 'pay_Q1LmNoPqRsTuVw' },
+          razorpay_signature: { type: 'string', example: 'generated-signature' },
         },
       },
       CreateClassroomRequest: {

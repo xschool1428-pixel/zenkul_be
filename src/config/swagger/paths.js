@@ -189,14 +189,19 @@ export const swaggerPaths = mergePaths(
   // ─── Schools ────────────────────────────────────────
   {
     '/api/schools': path(
-      POST(T.SCHOOL, 'Create school'),
+      POST(T.SCHOOL, 'Create school', {
+        requestBody: jsonRef('#/components/schemas/CreateSchoolRequest'),
+      }),
       GET(T.SCHOOL, 'List schools', {
         parameters: [{ in: 'query', name: 'organizationId', schema: { type: 'string' } }],
       })
     ),
     '/api/schools/{id}': path(
       GET(T.SCHOOL, 'Get school', { parameters: [pathId()] }),
-      PATCH(T.SCHOOL, 'Update school', { parameters: [pathId()] })
+      PATCH(T.SCHOOL, 'Update school', {
+        parameters: [pathId()],
+        requestBody: jsonRef('#/components/schemas/UpdateSchoolRequest'),
+      })
     ),
   },
 
@@ -205,13 +210,18 @@ export const swaggerPaths = mergePaths(
     '/api/students': schoolPath(
       path(
         GET(T.STUDENT, 'List students (paginated)', { parameters: paginationParams }),
-        POST(T.STUDENT, 'Create student (profile, enrollment, guardian)')
+        POST(T.STUDENT, 'Create student (profile, enrollment, guardian)', {
+          requestBody: jsonRef('#/components/schemas/CreateStudentRequest'),
+        })
       )
     ),
     '/api/students/{id}': schoolPath(
       path(
         GET(T.STUDENT, 'Get student detail', { parameters: [pathId()] }),
-        PATCH(T.STUDENT, 'Update student', { parameters: [pathId()] })
+        PATCH(T.STUDENT, 'Update student', {
+          parameters: [pathId()],
+          requestBody: jsonRef('#/components/schemas/UpdateStudentRequest'),
+        })
       )
     ),
     '/api/students/{id}/aadhaar': schoolPath(
@@ -232,13 +242,17 @@ export const swaggerPaths = mergePaths(
     '/api/students/{studentId}/enrollments': schoolPath(
       path(
         GET(T.STUDENT, 'List student enrollments', { parameters: [pathId('studentId')] }),
-        POST(T.STUDENT, 'Create enrollment', { parameters: [pathId('studentId')] })
+        POST(T.STUDENT, 'Create enrollment', {
+          parameters: [pathId('studentId')],
+          requestBody: jsonRef('#/components/schemas/CreateEnrollmentRequest'),
+        })
       )
     ),
     '/api/students/{studentId}/promote': schoolPath(
       path(
         POST(T.STUDENT, 'Promote student to new class/section', {
           parameters: [pathId('studentId')],
+          requestBody: jsonRef('#/components/schemas/PromoteStudentRequest'),
         })
       )
     ),
@@ -249,13 +263,18 @@ export const swaggerPaths = mergePaths(
     '/api/teachers': schoolPath(
       path(
         GET(T.TEACHER, 'List teachers (paginated)', { parameters: paginationParams }),
-        POST(T.TEACHER, 'Create teacher')
+        POST(T.TEACHER, 'Create teacher', {
+          requestBody: jsonRef('#/components/schemas/CreateTeacherRequest'),
+        })
       )
     ),
     '/api/teachers/{id}': schoolPath(
       path(
         GET(T.TEACHER, 'Get teacher', { parameters: [pathId()] }),
-        PATCH(T.TEACHER, 'Update teacher', { parameters: [pathId()] })
+        PATCH(T.TEACHER, 'Update teacher', {
+          parameters: [pathId()],
+          requestBody: jsonRef('#/components/schemas/UpdateTeacherRequest'),
+        })
       )
     ),
   },
@@ -265,13 +284,18 @@ export const swaggerPaths = mergePaths(
     '/api/subjects': schoolPath(
       path(
         GET(T.SUBJECT, 'List subjects (paginated)', { parameters: paginationParams }),
-        POST(T.SUBJECT, 'Create subject')
+        POST(T.SUBJECT, 'Create subject', {
+          requestBody: jsonRef('#/components/schemas/CreateSubjectRequest'),
+        })
       )
     ),
     '/api/subjects/{id}': schoolPath(
       path(
         GET(T.SUBJECT, 'Get subject', { parameters: [pathId()] }),
-        PATCH(T.SUBJECT, 'Update subject', { parameters: [pathId()] }),
+        PATCH(T.SUBJECT, 'Update subject', {
+          parameters: [pathId()],
+          requestBody: jsonRef('#/components/schemas/UpdateSubjectRequest'),
+        }),
         DELETE(T.SUBJECT, 'Delete subject (soft)', { parameters: [pathId()] })
       )
     ),
@@ -279,12 +303,23 @@ export const swaggerPaths = mergePaths(
 
   // ─── Guardians ──────────────────────────────────────
   {
-    '/api/guardians': schoolPath(path(POST(T.GUARDIAN, 'Create guardian'))),
+    '/api/guardians': schoolPath(
+      path(
+        POST(T.GUARDIAN, 'Create guardian', {
+          requestBody: jsonRef('#/components/schemas/CreateGuardianRequest'),
+        })
+      )
+    ),
     '/api/guardians/{id}': schoolPath(
       path(GET(T.GUARDIAN, 'Get guardian', { parameters: [pathId()] }))
     ),
     '/api/guardians/students/{studentId}/link': schoolPath(
-      path(POST(T.GUARDIAN, 'Link guardian to student', { parameters: [pathId('studentId')] }))
+      path(
+        POST(T.GUARDIAN, 'Link guardian to student', {
+          parameters: [pathId('studentId')],
+          requestBody: jsonRef('#/components/schemas/LinkGuardianRequest'),
+        })
+      )
     ),
     '/api/guardians/students/{studentId}': schoolPath(
       path(GET(T.GUARDIAN, 'List guardians for student', { parameters: [pathId('studentId')] }))
@@ -307,19 +342,26 @@ export const swaggerPaths = mergePaths(
     '/api/academics/years': schoolPath(
       path(
         GET(T.ACADEMIC, 'List academic years'),
-        POST(T.ACADEMIC, 'Create academic year')
+        POST(T.ACADEMIC, 'Create academic year', {
+          requestBody: jsonRef('#/components/schemas/CreateAcademicYearRequest'),
+        })
       )
     ),
     '/api/academics/classes': schoolPath(
       path(
         GET(T.ACADEMIC, 'List classes'),
-        POST(T.ACADEMIC, 'Create class')
+        POST(T.ACADEMIC, 'Create class', {
+          requestBody: jsonRef('#/components/schemas/CreateSchoolClassRequest'),
+        })
       )
     ),
     '/api/academics/classes/{classId}/sections': schoolPath(
       path(
         GET(T.ACADEMIC, 'List sections for class', { parameters: [pathId('classId')] }),
-        POST(T.ACADEMIC, 'Create section', { parameters: [pathId('classId')] })
+        POST(T.ACADEMIC, 'Create section', {
+          parameters: [pathId('classId')],
+          requestBody: jsonRef('#/components/schemas/CreateSectionRequest'),
+        })
       )
     ),
     '/api/academics/terms': schoolPath(
@@ -327,7 +369,9 @@ export const swaggerPaths = mergePaths(
         GET(T.ACADEMIC, 'List terms', {
           parameters: [{ in: 'query', name: 'academicYearId', schema: { type: 'string' } }],
         }),
-        POST(T.ACADEMIC, 'Create term / session')
+        POST(T.ACADEMIC, 'Create term / session', {
+          requestBody: jsonRef('#/components/schemas/CreateTermRequest'),
+        })
       )
     ),
   },
@@ -337,7 +381,9 @@ export const swaggerPaths = mergePaths(
     '/api/chapters': schoolPath(
       path(
         GET(T.CHAPTER, 'List subject chapters'),
-        POST(T.CHAPTER, 'Create chapter')
+        POST(T.CHAPTER, 'Create chapter', {
+          requestBody: jsonRef('#/components/schemas/CreateChapterRequest'),
+        })
       )
     ),
     '/api/chapters/{id}': schoolPath(
@@ -371,7 +417,12 @@ export const swaggerPaths = mergePaths(
       )
     ),
     '/api/ratings/{id}': schoolPath(
-      path(PATCH(T.RATING, 'Update rating', { parameters: [pathId()] }))
+      path(
+        PATCH(T.RATING, 'Update rating', {
+          parameters: [pathId()],
+          requestBody: jsonRef('#/components/schemas/UpdateRatingRequest'),
+        })
+      )
     ),
   },
 
@@ -447,7 +498,13 @@ export const swaggerPaths = mergePaths(
 
   // ─── Attendance ─────────────────────────────────────
   {
-    '/api/attendance/mark': schoolPath(path(POST(T.ATTENDANCE, 'Mark attendance'))),
+    '/api/attendance/mark': schoolPath(
+      path(
+        POST(T.ATTENDANCE, 'Mark attendance', {
+          requestBody: jsonRef('#/components/schemas/MarkAttendanceRequest'),
+        })
+      )
+    ),
     '/api/attendance/student/{studentId}': schoolPath(
       path(GET(T.ATTENDANCE, 'List attendance for student', { parameters: [pathId('studentId')] }))
     ),
@@ -458,13 +515,21 @@ export const swaggerPaths = mergePaths(
     '/api/exams': schoolPath(
       path(
         GET(T.EXAM, 'List exams (paginated)', { parameters: paginationParams }),
-        POST(T.EXAM, 'Create exam')
+        POST(T.EXAM, 'Create exam', {
+          requestBody: jsonRef('#/components/schemas/CreateExamRequest'),
+        })
       )
     ),
     '/api/exams/student/{studentId}/results': schoolPath(
       path(GET(T.EXAM, 'Published results for student', { parameters: [pathId('studentId')] }))
     ),
-    '/api/exams/results': schoolPath(path(POST(T.EXAM, 'Upsert exam result'))),
+    '/api/exams/results': schoolPath(
+      path(
+        POST(T.EXAM, 'Upsert exam result', {
+          requestBody: jsonRef('#/components/schemas/UpsertExamResultRequest'),
+        })
+      )
+    ),
     '/api/exams/{id}': schoolPath(
       path(GET(T.EXAM, 'Get exam', { parameters: [pathId()] }))
     ),
@@ -481,13 +546,17 @@ export const swaggerPaths = mergePaths(
     '/api/fees/categories': schoolPath(
       path(
         GET(T.FEE, 'List fee categories'),
-        POST(T.FEE, 'Create fee category')
+        POST(T.FEE, 'Create fee category', {
+          requestBody: jsonRef('#/components/schemas/CreateFeeCategoryRequest'),
+        })
       )
     ),
     '/api/fees/structures': schoolPath(
       path(
         GET(T.FEE, 'List fee structures (paginated)', { parameters: paginationParams }),
-        POST(T.FEE, 'Create fee structure')
+        POST(T.FEE, 'Create fee structure', {
+          requestBody: jsonRef('#/components/schemas/CreateFeeStructureRequest'),
+        })
       )
     ),
     '/api/fees/structures/{id}': schoolPath(
@@ -500,7 +569,9 @@ export const swaggerPaths = mergePaths(
     '/api/invoices': schoolPath(
       path(
         GET(T.INVOICE, 'List invoices (paginated)', { parameters: paginationParams }),
-        POST(T.INVOICE, 'Create invoice')
+        POST(T.INVOICE, 'Create invoice', {
+          requestBody: jsonRef('#/components/schemas/CreateInvoiceRequest'),
+        })
       )
     ),
     '/api/invoices/{id}': schoolPath(
@@ -532,30 +603,23 @@ export const swaggerPaths = mergePaths(
     ),
     '/api/payments/fees/verify': path(
       POST(T.PAYMENT, 'Verify student fee payment', {
-        requestBody: {
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                properties: {
-                  razorpay_order_id: { type: 'string' },
-                  razorpay_payment_id: { type: 'string' },
-                  razorpay_signature: { type: 'string' },
-                },
-              },
-            },
-          },
-        },
+        requestBody: jsonRef('#/components/schemas/VerifyPaymentRequest'),
       })
     ),
     '/api/payments/platform/seats': orgPath(
       path(GET(T.PAYMENT, 'Count billable seats for organization'))
     ),
     '/api/payments/platform/initiate': orgPath(
-      path(POST(T.PAYMENT, 'Initiate platform subscription payment'))
+      path(
+        POST(T.PAYMENT, 'Initiate platform subscription payment', {
+          requestBody: jsonRef('#/components/schemas/InitiatePlatformPaymentRequest'),
+        })
+      )
     ),
     '/api/payments/platform/verify': path(
-      POST(T.PAYMENT, 'Verify platform subscription payment')
+      POST(T.PAYMENT, 'Verify platform subscription payment', {
+        requestBody: jsonRef('#/components/schemas/VerifyPaymentRequest'),
+      })
     ),
     '/api/payments/schools/razorpay/onboard': schoolPath(
       path(POST(T.PAYMENT, 'Onboard school Razorpay linked account'))
