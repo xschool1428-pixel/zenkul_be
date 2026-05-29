@@ -98,3 +98,61 @@ export const jsonRef = (ref) => ({
   required: true,
   content: { 'application/json': { schema: { $ref: ref } } },
 });
+
+/** 200 response with typed `data` payload */
+export const respData = (schemaRef, description = 'OK') => ({
+  200: {
+    description,
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { $ref: schemaRef },
+          },
+        },
+      },
+    },
+  },
+});
+
+/** 201 response with typed `data` payload */
+export const resp201 = (schemaRef, description = 'Created') => ({
+  201: {
+    description,
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { $ref: schemaRef },
+          },
+        },
+      },
+    },
+  },
+});
+
+/** Paginated list response */
+export const respPaginated = (itemRef, description = 'Paginated list') => ({
+  200: {
+    description,
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { type: 'array', items: { $ref: itemRef } },
+            meta: { $ref: '#/components/schemas/PaginationMeta' },
+          },
+        },
+      },
+    },
+  },
+});
+
+/** Shorthand for request body $ref */
+export const body = jsonRef;
