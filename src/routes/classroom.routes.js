@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as classroomController from '../controllers/classroom.controller.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireSchoolContext, assertSchoolAccess } from '../middleware/tenant.js';
+import { requireOrganizationSubscription } from '../middleware/requireOrganizationSubscription.js';
 import { authorize } from '../middleware/authorize.js';
 import { validate } from '../middleware/validate.js';
 import Joi from 'joi';
@@ -46,7 +47,7 @@ router.use(authenticate);
 router.get('/my', classroomController.myClassrooms);
 router.post('/join', classroomController.join);
 
-router.use(requireSchoolContext, assertSchoolAccess);
+router.use(requireSchoolContext, assertSchoolAccess, requireOrganizationSubscription);
 
 router.get('/', authorize('classroom.read'), classroomController.list);
 router.get('/:id', authorize('classroom.read'), classroomController.get);

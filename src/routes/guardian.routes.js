@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as guardianController from '../controllers/guardian.controller.js';
 import { authenticate } from '../middleware/auth.js';
-import { requireSchoolContext, assertSchoolAccess } from '../middleware/tenant.js';
+import { schoolApiStack } from '../middleware/tenantStacks.js';
 import { authorize } from '../middleware/authorize.js';
 import { validate } from '../middleware/validate.js';
 import { createGuardianSchema, linkGuardianSchema } from '../validators/domain.validators.js';
@@ -9,7 +9,7 @@ import Joi from 'joi';
 import { objectId } from '../validators/common.js';
 
 const router = Router();
-router.use(authenticate, requireSchoolContext, assertSchoolAccess);
+router.use(schoolApiStack);
 
 router.post('/', authorize('student.manage'), validate(createGuardianSchema), guardianController.create);
 router.get(

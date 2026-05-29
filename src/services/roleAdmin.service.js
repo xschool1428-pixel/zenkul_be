@@ -7,7 +7,8 @@ import {
   SubscriptionPlan,
   OrganizationSubscription,
 } from '../models/index.js';
-import { NotFoundError } from '../utils/errors.js';
+import { NotFoundError, BadRequestError } from '../utils/errors.js';
+import { assertRolePermissionsAllowed } from './organizationEntitlement.service.js';
 
 export async function listPermissions() {
   return Permission.find().sort({ resource: 1, action: 1 });
@@ -21,9 +22,42 @@ export async function listRoles(filters = {}) {
   return Role.find(q);
 }
 
+export async function createOrganizationRole({ organizationId, name, code, permissionIds, schoolId }) {
+  if (!organizationId) throw new BadRequestError('organizationId required');
+  await assertRolePermissionsAllowed(organizationId, permissionIds);
+
+  return Role.create({
+    organizationId,
+    schoolId: schoolId || null,
+    name,
+    code,
+    scopeLevel: schoolId ? 'school' : 'organization',
+    isSystem: false,
+    permissions: permissionIds.map((permissionId) => ({ permissionId, effect: 'allow' })),
+  });
+}
+
+export async function updateOrganizationRole(roleId, organizationId, { name, permissionIds }) {
+  const role = await Role.findOne({ _id: roleId, organizationId, isSystem: false });
+  if (!role) throw new NotFoundError('Role not found');
+  if (permissionIds) {
+    await assertRolePermissionsAllowed(organizationId, permissionIds);
+    role.permissions = permissionIds.map((permissionId) => ({ permissionId, effect: 'allow' }));
+  }
+  if (name) role.name = name;
+  await role.save();
+  return role;
+}
+
 export async function assignRole({ userId, roleId, organizationId, schoolId, assignedBy }) {
   const role = await Role.findById(roleId);
   if (!role) throw new NotFoundError('Role not found');
+
+  const orgId = organizationId || role.organizationId;
+  if (orgId && role.permissions?.length) {
+    const permIds = role.permissions.map((p) => p.permissionId);
+    await assertRolePermissionsAllowed(String(orgId), permIds);
+  }
 
   return UserRole.create({
     userId,

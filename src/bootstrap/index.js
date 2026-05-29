@@ -1,4 +1,5 @@
 import { ensureSuperAdminUser } from './super-admin/ensureSuperAdmin.js';
+import { ensureBillingDefaults } from './billingBootstrap.js';
 
 /**
  * Runs once after DB connect on every server start.
@@ -6,8 +7,11 @@ import { ensureSuperAdminUser } from './super-admin/ensureSuperAdmin.js';
  */
 export async function runStartupBootstrap() {
   try {
-    const result = await ensureSuperAdminUser();
-    return { superAdmin: result };
+    const [superAdmin, billing] = await Promise.all([
+      ensureSuperAdminUser(),
+      ensureBillingDefaults(),
+    ]);
+    return { superAdmin, billing };
   } catch (err) {
     console.error('[bootstrap] Failed:', err.message);
     throw err;

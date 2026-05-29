@@ -11,7 +11,17 @@ const organizationSubscriptionSchema = new mongoose.Schema(
     billedSeatCount: { type: Number, default: 0 },
     currentPeriodStart: Date,
     currentPeriodEnd: Date,
+    /** End of grace after currentPeriodEnd (reminder window before suspend) */
+    gracePeriodEnd: Date,
     cancelAtPeriodEnd: { type: Boolean, default: false },
+    /** Super Admin discount — percent off per-seat price (0–100) */
+    discountPercent: { type: Number, default: 0, min: 0, max: 100 },
+    /** Fixed paise discount per seat per month */
+    discountPaisePerSeat: { type: Number, default: 0, min: 0 },
+    /** Overrides plan price when set (paise per user / month) */
+    customPricePerUserPaise: { type: Number, min: 0 },
+    lastReminderAt: Date,
+    accessBlockedAt: Date,
     razorpaySubscriptionId: String,
     razorpayCustomerId: String,
     lastPlatformPaymentId: { type: mongoose.Schema.Types.ObjectId, ref: 'PlatformPayment' },

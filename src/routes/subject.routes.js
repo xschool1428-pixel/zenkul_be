@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as subjectController from '../controllers/subject.controller.js';
 import { authenticate } from '../middleware/auth.js';
-import { requireSchoolContext, assertSchoolAccess } from '../middleware/tenant.js';
+import { schoolApiStack } from '../middleware/tenantStacks.js';
 import { authorize } from '../middleware/authorize.js';
 import { validate } from '../middleware/validate.js';
 import { createSubjectSchema } from '../validators/domain.validators.js';
@@ -9,7 +9,7 @@ import Joi from 'joi';
 import { objectId, paginationQuerySchema } from '../validators/common.js';
 
 const router = Router();
-router.use(authenticate, requireSchoolContext, assertSchoolAccess);
+router.use(schoolApiStack);
 
 router.get('/', authorize('school.read'), validate(paginationQuerySchema), subjectController.list);
 router.post('/', authorize('school.manage'), validate(createSubjectSchema), subjectController.create);

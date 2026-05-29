@@ -52,11 +52,17 @@ export const orgDashboard = asyncHandler(async (req, res) => {
   res.json({ success: true, data });
 });
 
-export const listAudits = asyncHandler(async (req, res) => {
-  const { data, meta } = await auditService.listAudits({
-    schoolId: req.schoolId,
-    organizationId: req.organizationId,
-    ...req.query,
-  });
+export const listSchoolAudits = asyncHandler(async (req, res) => {
+  const { data, meta } = await auditService.listSchoolAudits(req.schoolId, req.query);
+  res.json({ success: true, data, meta });
+});
+
+export const listOrganizationAudits = asyncHandler(async (req, res) => {
+  const { data, meta } = await auditService.listOrganizationAudits(req.organizationId, req.query);
+  res.json({ success: true, data, meta });
+});
+
+export const listPlatformAudits = asyncHandler(async (req, res) => {
+  const { data, meta } = await auditService.listPlatformAudits(req.query);
   res.json({ success: true, data, meta });
 });

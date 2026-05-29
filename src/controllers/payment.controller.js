@@ -51,6 +51,11 @@ export const getBillableSeats = asyncHandler(async (req, res) => {
   res.json({ success: true, data: { seatCount: count } });
 });
 
+export const getBillingPreview = asyncHandler(async (req, res) => {
+  const data = await platformBillingService.getBillingPreview(req.organizationId);
+  res.json({ success: true, data });
+});
+
 export const onboardSchoolRazorpay = asyncHandler(async (req, res) => {
   const school = await School.findById(req.schoolId);
   if (!school) throw new NotFoundError('School not found');

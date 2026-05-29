@@ -142,22 +142,59 @@ export const swaggerPaths = mergePaths(
     '/api/admin/organizations/subscription': orgPath(
       path(GET(T.ADMIN, 'Organization subscription status'))
     ),
+    '/api/admin/organizations/audit-logs': orgPath(
+      path(
+        GET(T.ADMIN, 'Organization audit logs (all schools in org)', {
+          parameters: [
+            ...paginationParams,
+            { in: 'query', name: 'entityType', schema: { type: 'string' } },
+            { in: 'query', name: 'action', schema: { type: 'string' } },
+          ],
+        })
+      )
+    ),
     '/api/admin/schools/dashboard': schoolPath(
       path(GET(T.ADMIN, 'School dashboard stats'))
     ),
     '/api/admin/schools/users': schoolPath(path(GET(T.ADMIN, 'List school staff and roles'))),
     '/api/admin/schools/audit-logs': schoolPath(
       path(
-        GET(T.ADMIN, 'Audit logs (paginated)', {
-          parameters: [...paginationParams, { in: 'query', name: 'entityType', schema: { type: 'string' } }],
+        GET(T.ADMIN, 'School audit logs (paginated)', {
+          parameters: [
+            ...paginationParams,
+            { in: 'query', name: 'entityType', schema: { type: 'string' } },
+            { in: 'query', name: 'action', schema: { type: 'string' } },
+          ],
         })
       )
+    ),
+    '/api/admin/platform/audit-logs': path(
+      GET(T.ADMIN, 'Platform audit logs — SUPER_ADMIN only (all tenants)', {
+        parameters: [
+          ...paginationParams,
+          { in: 'query', name: 'organizationId', schema: { type: 'string' } },
+          { in: 'query', name: 'schoolId', schema: { type: 'string' } },
+          { in: 'query', name: 'entityType', schema: { type: 'string' } },
+          { in: 'query', name: 'action', schema: { type: 'string' } },
+        ],
+      })
     ),
   },
 
   // ─── Organizations ──────────────────────────────────
   {
     '/api/organizations': path(
+      GET(T.ORG, 'List organizations (paginated; SUPER_ADMIN sees all)', {
+        parameters: [
+          ...paginationParams,
+          {
+            in: 'query',
+            name: 'status',
+            schema: { type: 'string', enum: ['active', 'inactive', 'suspended', 'pending'] },
+          },
+          { in: 'query', name: 'search', schema: { type: 'string' }, description: 'Name, slug, or email' },
+        ],
+      }),
       POST(T.ORG, 'Create organization', {
         requestBody: {
           content: {
