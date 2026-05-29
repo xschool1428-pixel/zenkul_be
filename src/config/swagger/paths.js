@@ -2,6 +2,7 @@ import {
   GET,
   POST,
   PATCH,
+  PUT,
   DELETE,
   path,
   schoolPath,
@@ -9,8 +10,56 @@ import {
   mergePaths,
   pathId,
   paginationParams,
+  auditLogQueryParams,
+  platformAuditLogQueryParams,
   jsonRef,
 } from './helpers.js';
+
+const paginatedAuditResponse = {
+  200: {
+    description: 'Paginated audit logs',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { type: 'array', items: { $ref: '#/components/schemas/AuditLogEntry' } },
+            meta: { $ref: '#/components/schemas/PaginationMeta' },
+          },
+        },
+      },
+    },
+  },
+};
+
+const subscriptionDetailResponse = {
+  200: {
+    description: 'Subscription access + permission grants',
+    content: {
+      'application/json': {
+        schema: { $ref: '#/components/schemas/OrgSubscriptionDetailResponse' },
+      },
+    },
+  },
+};
+
+const billingPreviewResponse = {
+  200: {
+    description: 'Billing preview with access phase',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            data: { $ref: '#/components/schemas/BillingPreviewResponse' },
+          },
+        },
+      },
+    },
+  },
+};
 
 const T = {
   SYSTEM: '01 - System',
@@ -96,13 +145,36 @@ export const swaggerPaths = mergePaths(
     ),
     '/api/auth/me': path(GET(T.AUTH, 'Current user profile')),
     '/api/auth/context': path(
-      GET(T.AUTH, 'Auth context — roles, permissions, schools, parent children')
+      GET(T.AUTH, 'Auth context — roles, permissions, subscription, schools, children')
     ),
   },
 
   // ─── Admin ──────────────────────────────────────────
   {
     '/api/admin/permissions': path(GET(T.ADMIN, 'List all permissions')),
+    '/api/admin/permissions/catalog': path(
+      GET(T.ADMIN, 'Full permission catalog (SUPER_ADMIN)', {
+        parameters: [
+          { in: 'query', name: 'includePlatformOnly', schema: { type: 'boolean', default: false } },
+        ],
+        responses: {
+          200: {
+            description: 'Permission catalog',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: { type: 'array', items: { $ref: '#/components/schemas/PermissionCatalogItem' } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      })
+    ),
     '/api/admin/roles': path(
       GET(T.ADMIN, 'List roles', {
         parameters: [
@@ -135,21 +207,96 @@ export const swaggerPaths = mergePaths(
     '/api/admin/users/{userId}/roles': path(
       GET(T.ADMIN, 'User role assignments', { parameters: [pathId('userId')] })
     ),
-    '/api/admin/subscriptions/plans': path(GET(T.ADMIN, 'List subscription plans')),
+    '/api/admin/subscriptions/plans': path(
+      GET(T.ADMIN, 'List subscription plans'),
+      POST(T.ADMIN, 'Create subscription plan (SUPER_ADMIN)', {
+        requestBody: jsonRef('#/components/schemas/CreateSubscriptionPlanRequest'),
+      })
+    ),
+    '/api/admin/subscriptions/plans/{id}': path(
+      PATCH(T.ADMIN, 'Update subscription plan (SUPER_ADMIN)', {
+        parameters: [pathId()],
+        requestBody: jsonRef('#/components/schemas/UpdateSubscriptionPlanRequest'),
+      })
+    ),
+    '/api/admin/platform/organizations/{organizationId}/subscription': path(
+      GET(T.ADMIN, 'Organization subscription & portal access (SUPER_ADMIN)', {
+        parameters: [pathId('organizationId')],
+        responses: subscriptionDetailResponse,
+      })
+    ),
+    '/api/admin/platform/organizations/{organizationId}/billing': path(
+      PATCH(T.ADMIN, 'Set org discount / custom price / plan (SUPER_ADMIN)', {
+        parameters: [pathId('organizationId')],
+        requestBody: jsonRef('#/components/schemas/UpdateOrgBillingRequest'),
+        responses: subscriptionDetailResponse,
+      })
+    ),
+    '/api/admin/platform/organizations/{organizationId}/permissions': path(
+      PUT(T.ADMIN, 'Replace org permission grants (SUPER_ADMIN)', {
+        parameters: [pathId('organizationId')],
+        requestBody: jsonRef('#/components/schemas/SetOrgPermissionsRequest'),
+      })
+    ),
+    '/api/admin/platform/organizations/{organizationId}/plan': path(
+      POST(T.ADMIN, 'Assign subscription plan to organization (SUPER_ADMIN)', {
+        parameters: [pathId('organizationId')],
+        requestBody: jsonRef('#/components/schemas/AssignOrgPlanRequest'),
+      })
+    ),
     '/api/admin/organizations/dashboard': orgPath(
       path(GET(T.ADMIN, 'Organization dashboard stats'))
     ),
     '/api/admin/organizations/subscription': orgPath(
-      path(GET(T.ADMIN, 'Organization subscription status'))
+      path(GET(T.ADMIN, 'Organization subscription, access phase & grace status', {
+        responses: subscriptionDetailResponse,
+      }))
+    ),
+    '/api/admin/organizations/billing/summary': orgPath(
+      path(GET(T.ADMIN, 'Billing summary — seats, price, amount due, renewal dates', {
+        responses: billingPreviewResponse,
+      }))
+    ),
+    '/api/admin/organizations/permissions': orgPath(
+      path(GET(T.ADMIN, 'Entitled permission keys for org (read-only)', {
+        responses: {
+          200: {
+            description: 'Permission keys e.g. student.read',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: { type: 'array', items: { type: 'string', example: 'student.read' } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }))
+    ),
+    '/api/admin/organizations/roles': orgPath(
+      path(
+        POST(T.ADMIN, 'Create organization role from entitled permissions', {
+          requestBody: jsonRef('#/components/schemas/CreateOrgRoleRequest'),
+        })
+      )
+    ),
+    '/api/admin/organizations/roles/{roleId}': orgPath(
+      path(
+        PATCH(T.ADMIN, 'Update organization role permissions', {
+          parameters: [pathId('roleId')],
+          requestBody: jsonRef('#/components/schemas/UpdateOrgRoleRequest'),
+        })
+      )
     ),
     '/api/admin/organizations/audit-logs': orgPath(
       path(
         GET(T.ADMIN, 'Organization audit logs (all schools in org)', {
-          parameters: [
-            ...paginationParams,
-            { in: 'query', name: 'entityType', schema: { type: 'string' } },
-            { in: 'query', name: 'action', schema: { type: 'string' } },
-          ],
+          parameters: auditLogQueryParams,
+          responses: paginatedAuditResponse,
         })
       )
     ),
@@ -160,23 +307,15 @@ export const swaggerPaths = mergePaths(
     '/api/admin/schools/audit-logs': schoolPath(
       path(
         GET(T.ADMIN, 'School audit logs (paginated)', {
-          parameters: [
-            ...paginationParams,
-            { in: 'query', name: 'entityType', schema: { type: 'string' } },
-            { in: 'query', name: 'action', schema: { type: 'string' } },
-          ],
+          parameters: auditLogQueryParams,
+          responses: paginatedAuditResponse,
         })
       )
     ),
     '/api/admin/platform/audit-logs': path(
       GET(T.ADMIN, 'Platform audit logs — SUPER_ADMIN only (all tenants)', {
-        parameters: [
-          ...paginationParams,
-          { in: 'query', name: 'organizationId', schema: { type: 'string' } },
-          { in: 'query', name: 'schoolId', schema: { type: 'string' } },
-          { in: 'query', name: 'entityType', schema: { type: 'string' } },
-          { in: 'query', name: 'action', schema: { type: 'string' } },
-        ],
+        parameters: platformAuditLogQueryParams,
+        responses: paginatedAuditResponse,
       })
     ),
   },
@@ -192,8 +331,25 @@ export const swaggerPaths = mergePaths(
             name: 'status',
             schema: { type: 'string', enum: ['active', 'inactive', 'suspended', 'pending'] },
           },
-          { in: 'query', name: 'search', schema: { type: 'string' }, description: 'Name, slug, or email' },
+          { in: 'query', name: 'search', schema: { type: 'string', maxLength: 100 }, description: 'Name, slug, or email' },
         ],
+        responses: {
+          200: {
+            description: 'Paginated organizations',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    data: { type: 'array', items: { $ref: '#/components/schemas/OrganizationListItem' } },
+                    meta: { $ref: '#/components/schemas/PaginationMeta' },
+                  },
+                },
+              },
+            },
+          },
+        },
       }),
       POST(T.ORG, 'Create organization', {
         requestBody: {
@@ -588,11 +744,24 @@ export const swaggerPaths = mergePaths(
     '/api/payments/platform/seats': orgPath(
       path(GET(T.PAYMENT, 'Count billable seats for organization'))
     ),
+    '/api/payments/platform/billing-preview': orgPath(
+      path(
+        GET(T.PAYMENT, 'Monthly billing preview — seats × price, discount, access phase & grace days', {
+          responses: billingPreviewResponse,
+        })
+      )
+    ),
     '/api/payments/platform/initiate': orgPath(
-      path(POST(T.PAYMENT, 'Initiate platform subscription payment'))
+      path(
+        POST(T.PAYMENT, 'Initiate platform subscription payment', {
+          requestBody: jsonRef('#/components/schemas/InitiatePlatformPaymentRequest'),
+        })
+      )
     ),
     '/api/payments/platform/verify': path(
-      POST(T.PAYMENT, 'Verify platform subscription payment')
+      POST(T.PAYMENT, 'Verify platform subscription payment', {
+        requestBody: jsonRef('#/components/schemas/VerifyRazorpayPaymentRequest'),
+      })
     ),
     '/api/payments/schools/razorpay/onboard': schoolPath(
       path(POST(T.PAYMENT, 'Onboard school Razorpay linked account'))

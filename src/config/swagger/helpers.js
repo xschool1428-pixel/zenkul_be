@@ -15,6 +15,24 @@ export const paginationParams = [
   { in: 'query', name: 'limit', schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } },
 ];
 
+export const auditLogQueryParams = [
+  ...paginationParams,
+  { in: 'query', name: 'entityType', schema: { type: 'string', maxLength: 80 } },
+  { in: 'query', name: 'action', schema: { type: 'string', maxLength: 80 } },
+  {
+    in: 'query',
+    name: 'actorUserId',
+    schema: { type: 'string', pattern: '^[a-f0-9]{24}$' },
+    description: 'Filter by user who performed the action',
+  },
+];
+
+export const platformAuditLogQueryParams = [
+  ...auditLogQueryParams,
+  { in: 'query', name: 'organizationId', schema: { type: 'string', pattern: '^[a-f0-9]{24}$' } },
+  { in: 'query', name: 'schoolId', schema: { type: 'string', pattern: '^[a-f0-9]{24}$' } },
+];
+
 const baseResponses = {
   400: { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
   401: { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },

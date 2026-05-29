@@ -1,6 +1,7 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import { config } from './index.js';
 import { swaggerPaths } from './swagger/paths.js';
+import * as billingSchemas from './swagger/billingSchemas.js';
 
 const API_PREFIX = '/api';
 
@@ -98,15 +99,16 @@ List APIs: \`?page=1&limit=20\` → response includes \`meta\` object.
         properties: {
           success: { type: 'boolean', example: true },
           data: { type: 'array', items: { type: 'object' } },
-          meta: {
-            type: 'object',
-            properties: {
-              page: { type: 'integer', example: 1 },
-              limit: { type: 'integer', example: 20 },
-              total: { type: 'integer', example: 100 },
-              totalPages: { type: 'integer', example: 5 },
-            },
-          },
+          meta: { $ref: '#/components/schemas/PaginationMeta' },
+        },
+      },
+      PaginationMeta: {
+        type: 'object',
+        properties: {
+          page: { type: 'integer', example: 1 },
+          limit: { type: 'integer', example: 20 },
+          total: { type: 'integer', example: 100 },
+          totalPages: { type: 'integer', example: 5 },
         },
       },
       ErrorResponse: {
@@ -195,6 +197,21 @@ List APIs: \`?page=1&limit=20\` → response includes \`meta\` object.
           ratingType: { type: 'string', default: 'chapter_assessment' },
         },
       },
+      CreateSubscriptionPlanRequest: billingSchemas.createSubscriptionPlanRequest,
+      UpdateSubscriptionPlanRequest: billingSchemas.updateSubscriptionPlanRequest,
+      UpdateOrgBillingRequest: billingSchemas.updateOrgBillingRequest,
+      SetOrgPermissionsRequest: billingSchemas.setOrgPermissionsRequest,
+      AssignOrgPlanRequest: billingSchemas.assignOrgPlanRequest,
+      CreateOrgRoleRequest: billingSchemas.createOrgRoleRequest,
+      UpdateOrgRoleRequest: billingSchemas.updateOrgRoleRequest,
+      InitiatePlatformPaymentRequest: billingSchemas.initiatePlatformPaymentRequest,
+      VerifyRazorpayPaymentRequest: billingSchemas.verifyRazorpayPaymentRequest,
+      SubscriptionAccessSnapshot: billingSchemas.subscriptionAccessSnapshot,
+      BillingPreviewResponse: billingSchemas.billingPreviewResponse,
+      OrgSubscriptionDetailResponse: billingSchemas.orgSubscriptionDetailResponse,
+      PermissionCatalogItem: billingSchemas.permissionCatalogItem,
+      AuditLogEntry: billingSchemas.auditLogEntry,
+      OrganizationListItem: billingSchemas.organizationListItem,
     },
   },
   paths: swaggerPaths,
