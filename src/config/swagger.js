@@ -6,13 +6,25 @@ import * as domainSchemas from './swagger/domainSchemas.js';
 
 const API_PREFIX = '/api';
 
+function countPaths(paths) {
+  let count = 0;
+  for (const pathItem of Object.values(paths || {})) {
+    count += Object.keys(pathItem).filter((m) =>
+      ['get', 'post', 'put', 'patch', 'delete'].includes(m)
+    ).length;
+  }
+  return count;
+}
+
+export const SWAGGER_OPERATION_COUNT = countPaths(swaggerPaths);
+
 const swaggerDefinition = {
   openapi: '3.0.3',
   info: {
     title: 'School Education SaaS API',
     version: '2.1.0',
     description: `
-Multi-tenant school ERP API — **120 endpoints** documented with request/response field schemas.
+Multi-tenant school ERP API — **${SWAGGER_OPERATION_COUNT} endpoints** documented with request/response field schemas.
 
 **Base path:** \`${API_PREFIX}\`
 
