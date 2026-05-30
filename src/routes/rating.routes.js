@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as ratingController from '../controllers/rating.controller.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireSchoolContext, assertSchoolAccess } from '../middleware/tenant.js';
+import { requireOrganizationSubscription } from '../middleware/requireOrganizationSubscription.js';
 import { authorize } from '../middleware/authorize.js';
 import { validate } from '../middleware/validate.js';
 import {
@@ -21,7 +22,7 @@ router.get(
   ratingController.summary
 );
 
-router.use(requireSchoolContext, assertSchoolAccess);
+router.use(requireSchoolContext, assertSchoolAccess, requireOrganizationSubscription);
 
 router.get('/', validate(listRatingQuerySchema), authorize('rating.read'), ratingController.list);
 router.get(

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import * as studentController from '../controllers/student.controller.js';
 import * as enrollmentController from '../controllers/enrollment.controller.js';
 import { authenticate } from '../middleware/auth.js';
-import { requireSchoolContext, assertSchoolAccess } from '../middleware/tenant.js';
+import { schoolApiStack } from '../middleware/tenantStacks.js';
 import { authorize } from '../middleware/authorize.js';
 import { validate } from '../middleware/validate.js';
 import {
@@ -16,7 +16,7 @@ import { objectId, paginationQuerySchema } from '../validators/common.js';
 
 const router = Router();
 
-router.use(authenticate, requireSchoolContext, assertSchoolAccess);
+router.use(schoolApiStack);
 
 router.get(
   '/',

@@ -1,4 +1,5 @@
 import { School, OrganizationMember, UserSchool } from '../models/index.js';
+import { hasPermission } from '../services/rbac.service.js';
 import { ForbiddenError, BadRequestError } from '../utils/errors.js';
 
 export function requireSchoolContext(req, res, next) {
@@ -18,7 +19,10 @@ export async function assertSchoolAccess(req, res, next) {
     status: 'active',
   });
   if (!membership) {
-    return next(new ForbiddenError('No access to this school'));
+    const canManage = await hasPermission(req.userId, 'school.manage', { schoolId });
+    if (!canManage) {
+      return next(new ForbiddenError('No access to this school'));
+    }
   }
   const school = await School.findById(schoolId);
   if (!school || school.deletedAt) {
@@ -45,8 +49,12 @@ export async function assertOrganizationAccess(req, res, next) {
     organizationId: req.organizationId,
     status: 'active',
   });
-  if (!membership) {
-    return next(new ForbiddenError('No access to this organization'));
-  }
-  next();
+  if (membership) return next();
+
+  const canManage = await hasPermission(req.userId, 'organization.manage', {
+    organizationId: req.organizationId,
+  });
+  if (canManage) return next();
+
+  return next(new ForbiddenError('No access to this organization'));
 }

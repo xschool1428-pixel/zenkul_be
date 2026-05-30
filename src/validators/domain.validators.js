@@ -17,6 +17,83 @@ export const createOrganizationSchema = Joi.object({
   }).required(),
 });
 
+export const listOrganizationsQuerySchema = Joi.object({
+  query: Joi.object({
+    ...paginationQuery,
+    status: Joi.string().valid('active', 'inactive', 'suspended', 'pending').optional(),
+    search: Joi.string().trim().max(100).optional(),
+  }),
+});
+
+export const createSubscriptionPlanSchema = Joi.object({
+  body: Joi.object({
+    code: Joi.string().min(2).max(50).required(),
+    name: Joi.string().min(2).max(100).required(),
+    billingInterval: Joi.string().valid('monthly', 'yearly').default('monthly'),
+    pricePerUserPaise: Joi.number().integer().min(100).required(),
+    permissionIds: Joi.array().items(objectId).default([]),
+    maxSchools: Joi.number().integer().min(1),
+    features: Joi.array().items(
+      Joi.object({
+        featureCode: Joi.string().required(),
+        enabled: Joi.boolean(),
+        limitValue: Joi.number(),
+      })
+    ),
+    isActive: Joi.boolean(),
+  }).required(),
+});
+
+export const updateSubscriptionPlanSchema = Joi.object({
+  params: Joi.object({ id: objectId.required() }),
+  body: Joi.object({
+    name: Joi.string().min(2).max(100),
+    pricePerUserPaise: Joi.number().integer().min(100),
+    billingInterval: Joi.string().valid('monthly', 'yearly'),
+    permissionIds: Joi.array().items(objectId),
+    maxSchools: Joi.number().integer().min(1),
+    features: Joi.array(),
+    isActive: Joi.boolean(),
+  }).min(1),
+});
+
+export const updateOrgBillingSchema = Joi.object({
+  params: Joi.object({ organizationId: objectId.required() }),
+  body: Joi.object({
+    planId: objectId,
+    discountPercent: Joi.number().min(0).max(100),
+    discountPaisePerSeat: Joi.number().integer().min(0),
+    customPricePerUserPaise: Joi.number().integer().min(0).allow(null),
+  }).min(1),
+});
+
+export const setOrgPermissionsSchema = Joi.object({
+  params: Joi.object({ organizationId: objectId.required() }),
+  body: Joi.object({
+    permissionIds: Joi.array().items(objectId).required(),
+  }).required(),
+});
+
+export const createOrgRoleSchema = Joi.object({
+  body: Joi.object({
+    name: Joi.string().min(2).max(100).required(),
+    code: Joi.string().min(2).max(50).required(),
+    permissionIds: Joi.array().items(objectId).min(1).required(),
+    schoolId: objectId,
+  }).required(),
+});
+
+export const listAuditLogsQuerySchema = Joi.object({
+  query: Joi.object({
+    ...paginationQuery,
+    entityType: Joi.string().max(80).optional(),
+    action: Joi.string().max(80).optional(),
+    actorUserId: objectId.optional(),
+    organizationId: objectId.optional(),
+    schoolId: objectId.optional(),
+  }),
+});
+
 export const createSchoolSchema = Joi.object({
   body: Joi.object({
     organizationId: objectId.required(),

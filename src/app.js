@@ -5,7 +5,12 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import swaggerUi from 'swagger-ui-express';
 import { config } from './config/index.js';
-import { swaggerSpec, SWAGGER_UI_PATH, SWAGGER_JSON_PATH } from './config/swagger.js';
+import {
+  swaggerSpec,
+  SWAGGER_UI_PATH,
+  SWAGGER_JSON_PATH,
+  SWAGGER_OPERATION_COUNT,
+} from './config/swagger.js';
 import rootRoutes from './routes/root.routes.js';
 import apiRoutes from './routes/index.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
@@ -28,21 +33,29 @@ app.use(morgan(config.env === 'development' ? 'dev' : 'combined'));
 // Root & health (NOT under /api)
 app.use(rootRoutes);
 
-// Swagger UI
-app.get(SWAGGER_JSON_PATH, (_req, res) => {
+// Swagger UI — load spec from JSON URL so docs refresh without stale embedded cache
+const swaggerNoCache = (_req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  next();
+};
+
+app.get(SWAGGER_JSON_PATH, swaggerNoCache, (_req, res) => {
   res.json(swaggerSpec);
 });
 app.use(
   SWAGGER_UI_PATH,
+  swaggerNoCache,
   swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec, {
-    customSiteTitle: 'School SaaS API Docs',
+  swaggerUi.setup(null, {
+    customSiteTitle: `School SaaS API Docs (${SWAGGER_OPERATION_COUNT} endpoints)`,
     swaggerOptions: {
+      url: SWAGGER_JSON_PATH,
       persistAuthorization: true,
       docExpansion: 'list',
       filter: true,
       tagsSorter: 'alpha',
       operationsSorter: 'alpha',
+      displayRequestDuration: true,
     },
   })
 );

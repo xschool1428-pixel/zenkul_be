@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as invoiceController from '../controllers/invoice.controller.js';
 import { authenticate } from '../middleware/auth.js';
-import { requireSchoolContext, assertSchoolAccess } from '../middleware/tenant.js';
+import { schoolApiStack } from '../middleware/tenantStacks.js';
 import { authorize } from '../middleware/authorize.js';
 import { validate } from '../middleware/validate.js';
 import {
@@ -13,7 +13,7 @@ import { objectId } from '../validators/common.js';
 
 const router = Router();
 
-router.use(authenticate, requireSchoolContext, assertSchoolAccess);
+router.use(schoolApiStack);
 
 router.post(
   '/',

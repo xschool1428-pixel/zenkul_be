@@ -7,6 +7,17 @@ import {
   Guardian,
   StudentGuardian,
 } from '../models/index.js';
+import { isPlatformSuperAdmin } from './organization.service.js';
+import { getEntitledPermissionKeys } from './organizationEntitlement.service.js';
+import { evaluateOrganizationAccess } from './subscriptionAccess.service.js';
+
+async function filterPermissionsByEntitlement(userId, permissionKeys, organizationId) {
+  if (!organizationId) return permissionKeys;
+  if (await isPlatformSuperAdmin(userId)) return permissionKeys;
+
+  const entitled = new Set(await getEntitledPermissionKeys(organizationId));
+  return permissionKeys.filter((k) => entitled.has(k));
+}
 
 export async function getUserPermissions(userId, { schoolId, organizationId } = {}) {
   let userRoles;
@@ -25,20 +36,54 @@ export async function getUserPermissions(userId, { schoolId, organizationId } = 
     if (!role) continue;
     for (const rp of role.permissions || []) {
       const perm = await Permission.findById(rp.permissionId);
-      if (perm && rp.effect !== 'deny') {
+      if (perm && rp.effect !== 'deny' && perm.isActive !== false) {
         permissionSet.add(`${perm.resource}.${perm.action}`);
       }
     }
   }
 
-  return [...permissionSet];
+  let keys = [...permissionSet];
+  const orgScope =
+    organizationId ||
+    (schoolId && userRoles.find((ur) => String(ur.schoolId) === String(schoolId))?.roleId
+      ? organizationId
+      : null);
+
+  let resolvedOrgId = organizationId;
+  if (!resolvedOrgId && schoolId) {
+    const { School } = await import('../models/index.js');
+    const school = await School.findById(schoolId).select('organizationId');
+    resolvedOrgId = school?.organizationId;
+  }
+
+  if (resolvedOrgId) {
+    keys = await filterPermissionsByEntitlement(userId, keys, String(resolvedOrgId));
+  }
+
+  return keys;
 }
 
 export async function hasPermission(userId, permissionKey, context = {}) {
+  if (await isPlatformSuperAdmin(userId)) return true;
+
   const perms = await getUserPermissions(userId, context);
-  if (perms.includes(permissionKey)) return true;
+  const hasKey = perms.includes(permissionKey);
   const [resource] = permissionKey.split('.');
-  return perms.includes(`${resource}.manage`);
+  const hasManage = perms.includes(`${resource}.manage`);
+
+  if (!hasKey && !hasManage) return false;
+
+  let orgId = context.organizationId;
+  if (!orgId && context.schoolId) {
+    const { resolveOrganizationIdFromSchool } = await import('./subscriptionAccess.service.js');
+    orgId = await resolveOrganizationIdFromSchool(context.schoolId);
+  }
+  if (orgId) {
+    const access = await evaluateOrganizationAccess(orgId);
+    if (!access.canUsePortal) return false;
+  }
+
+  return true;
 }
 
 export async function getAuthContext(userId) {
@@ -79,9 +124,24 @@ export async function getAuthContext(userId) {
 
   const permissions = await getUserPermissions(userId);
 
+  let subscription = null;
+  const primaryOrgId = orgMembers[0]?.organizationId?._id || orgMembers[0]?.organizationId;
+  if (primaryOrgId) {
+    subscription = await evaluateOrganizationAccess(String(primaryOrgId));
+  } else if (await isPlatformSuperAdmin(userId)) {
+    subscription = { access: 'full', phase: 'platform', canUsePortal: true };
+  }
+
+  let entitledPermissions = [];
+  if (primaryOrgId) {
+    entitledPermissions = await getEntitledPermissionKeys(String(primaryOrgId));
+  }
+
   return {
     roles,
     permissions,
+    entitledPermissions,
+    subscription,
     schools: userSchools.map((us) => us.schoolId),
     organizations: orgMembers.map((om) => om.organizationId),
     guardian: guardian

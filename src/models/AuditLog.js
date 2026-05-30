@@ -18,5 +18,7 @@ const auditLogSchema = new mongoose.Schema(
 );
 
 auditLogSchema.index({ schoolId: 1, createdAt: -1 });
+auditLogSchema.index({ organizationId: 1, createdAt: -1 });
+auditLogSchema.index({ createdAt: -1 });
 
 export const AuditLog = mongoose.model('AuditLog', auditLogSchema);

@@ -3,30 +3,36 @@ import {
   OrganizationSubscription,
   SubscriptionPlan,
   PlatformPayment,
-  UserSchool,
-  OrganizationMember,
-  School,
 } from '../models/index.js';
 import { BadRequestError, NotFoundError } from '../utils/errors.js';
 import { config } from '../config/index.js';
 import * as razorpayService from './razorpay.service.js';
 import { emitToOrganization } from './socket.service.js';
 import { withTransaction } from '../utils/transaction.js';
+import { countBillableSeats } from './billingSeats.service.js';
+import {
+  ensureOrganizationSubscription,
+  evaluateOrganizationAccess,
+  resolvePricePerUserPaise,
+  activatePaidPeriod,
+} from './subscriptionAccess.service.js';
 
-export async function countBillableSeats(organizationId) {
-  const schools = await School.find({ organizationId, deletedAt: null }).select('_id');
-  const schoolIds = schools.map((s) => s._id);
+export { countBillableSeats };
 
-  const schoolUsers = await UserSchool.countDocuments({
-    schoolId: { $in: schoolIds },
-    status: 'active',
-  });
-  const orgUsers = await OrganizationMember.countDocuments({
-    organizationId,
-    status: 'active',
-  });
+export async function getBillingPreview(organizationId) {
+  const sub = await ensureOrganizationSubscription(organizationId);
+  const plan = await SubscriptionPlan.findById(sub.planId);
+  const seatCount = await countBillableSeats(organizationId);
+  const pricePerUserPaise = resolvePricePerUserPaise(plan, sub);
+  const access = await evaluateOrganizationAccess(organizationId);
 
-  return Math.max(schoolUsers + orgUsers, 1);
+  return {
+    ...access,
+    seatCount,
+    pricePerUserPaise,
+    amountDuePaise: seatCount * pricePerUserPaise,
+    currency: plan?.currency || 'INR',
+  };
 }
 
 export async function initiatePlatformSubscriptionPayment({
@@ -41,37 +47,35 @@ export async function initiatePlatformSubscriptionPayment({
   const org = await Organization.findById(organizationId);
   if (!org) throw new NotFoundError('Organization not found');
 
-  let sub = await OrganizationSubscription.findOne({ organizationId });
-  const plan = sub
-    ? await SubscriptionPlan.findById(sub.planId)
-    : await SubscriptionPlan.findOne({ code: 'starter', isActive: true });
-
+  const sub = await ensureOrganizationSubscription(organizationId);
+  const plan = await SubscriptionPlan.findById(sub.planId);
   if (!plan) throw new BadRequestError('No subscription plan configured');
 
   const seatCount = requestedSeats || (await countBillableSeats(organizationId));
-  const amountPaise = seatCount * plan.pricePerUserPaise;
+  const pricePerUserPaise = resolvePricePerUserPaise(plan, sub);
+  const amountPaise = seatCount * pricePerUserPaise;
 
   if (amountPaise < 100) throw new BadRequestError('Amount too small');
 
   const now = new Date();
   const periodEnd = new Date(now);
-  if (plan.billingInterval === 'yearly') {
-    periodEnd.setFullYear(periodEnd.getFullYear() + 1);
-  } else {
-    periodEnd.setMonth(periodEnd.getMonth() + 1);
-  }
+  periodEnd.setDate(periodEnd.getDate() + config.billing.billingPeriodDays);
 
   const payment = await PlatformPayment.create({
     organizationId,
-    subscriptionId: sub?._id,
+    subscriptionId: sub._id,
     seatCount,
-    pricePerUserPaise: plan.pricePerUserPaise,
+    pricePerUserPaise,
     amountPaise,
     billingPeriodStart: now,
     billingPeriodEnd: periodEnd,
     idempotencyKey,
     paidByUserId,
     status: 'pending',
+    metadata: {
+      discountPercent: sub.discountPercent,
+      discountPaisePerSeat: sub.discountPaisePerSeat,
+    },
   });
 
   const order = await razorpayService.createPlatformOrder({
@@ -88,17 +92,6 @@ export async function initiatePlatformSubscriptionPayment({
   payment.razorpayOrderId = order.id;
   await payment.save();
 
-  if (!sub) {
-    sub = await OrganizationSubscription.create({
-      organizationId,
-      planId: plan._id,
-      status: 'trialing',
-      seatCount,
-    });
-    payment.subscriptionId = sub._id;
-    await payment.save();
-  }
-
   return {
     payment,
     razorpay: {
@@ -108,7 +101,9 @@ export async function initiatePlatformSubscriptionPayment({
       currency: order.currency,
     },
     seatCount,
-    pricePerUserPaise: plan.pricePerUserPaise,
+    pricePerUserPaise,
+    amountPaise,
+    billingPreview: await getBillingPreview(organizationId),
   };
 }
 
@@ -119,13 +114,7 @@ async function activateSubscriptionFromPayment(payment, session) {
   }).session(session || null);
 
   if (sub) {
-    sub.status = 'active';
-    sub.seatCount = payment.seatCount;
-    sub.billedSeatCount = payment.seatCount;
-    sub.currentPeriodStart = payment.billingPeriodStart;
-    sub.currentPeriodEnd = payment.billingPeriodEnd;
-    sub.lastPlatformPaymentId = payment._id;
-    await sub.save(saveOpts);
+    await activatePaidPeriod(sub, payment, session);
   }
 
   emitToOrganization(String(payment.organizationId), 'subscription:paid', {

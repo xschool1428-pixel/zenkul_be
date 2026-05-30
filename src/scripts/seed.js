@@ -112,18 +112,42 @@ async function seed() {
   const perms = await Permission.find();
   const permMap = Object.fromEntries(perms.map((p) => [`${p.resource}.${p.action}`, p._id]));
 
+  const starterPermissionKeys = [
+    'student.read',
+    'student.create',
+    'student.manage',
+    'school.read',
+    'school.manage',
+    'attendance.read',
+    'attendance.mark',
+    'rating.read',
+    'rating.create',
+    'exam.read',
+    'exam.manage',
+    'classroom.read',
+    'classroom.create',
+    'classroom.manage',
+    'classroom.material',
+    'invoice.read',
+    'invoice.manage',
+    'subscription.manage',
+  ];
+  const starterPermissionIds = starterPermissionKeys.map((k) => permMap[k]).filter(Boolean);
+
   await SubscriptionPlan.findOneAndUpdate(
     { code: 'starter' },
     {
       code: 'starter',
       name: 'Starter',
       billingInterval: 'monthly',
-      pricePerUserPaise: 9900,
+      pricePerUserPaise: 5000,
       currency: 'INR',
+      permissionIds: starterPermissionIds,
       features: [
         { featureCode: 'attendance', enabled: true },
         { featureCode: 'fees', enabled: true },
         { featureCode: 'ratings', enabled: true },
+        { featureCode: 'exams', enabled: true },
       ],
       isActive: true,
     },

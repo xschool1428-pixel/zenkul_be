@@ -1,8 +1,22 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import { config } from './index.js';
 import { swaggerPaths } from './swagger/paths.js';
+import * as billingSchemas from './swagger/billingSchemas.js';
+import * as domainSchemas from './swagger/domainSchemas.js';
 
 const API_PREFIX = '/api';
+
+function countPaths(paths) {
+  let count = 0;
+  for (const pathItem of Object.values(paths || {})) {
+    count += Object.keys(pathItem).filter((m) =>
+      ['get', 'post', 'put', 'patch', 'delete'].includes(m)
+    ).length;
+  }
+  return count;
+}
+
+export const SWAGGER_OPERATION_COUNT = countPaths(swaggerPaths);
 
 const swaggerDefinition = {
   openapi: '3.0.3',
@@ -10,7 +24,7 @@ const swaggerDefinition = {
     title: 'School Education SaaS API',
     version: '2.1.0',
     description: `
-Multi-tenant school ERP API — **105 endpoints** documented.
+Multi-tenant school ERP API — **${SWAGGER_OPERATION_COUNT} endpoints** documented with request/response field schemas.
 
 **Base path:** \`${API_PREFIX}\`
 
@@ -98,15 +112,16 @@ List APIs: \`?page=1&limit=20\` → response includes \`meta\` object.
         properties: {
           success: { type: 'boolean', example: true },
           data: { type: 'array', items: { type: 'object' } },
-          meta: {
-            type: 'object',
-            properties: {
-              page: { type: 'integer', example: 1 },
-              limit: { type: 'integer', example: 20 },
-              total: { type: 'integer', example: 100 },
-              totalPages: { type: 'integer', example: 5 },
-            },
-          },
+          meta: { $ref: '#/components/schemas/PaginationMeta' },
+        },
+      },
+      PaginationMeta: {
+        type: 'object',
+        properties: {
+          page: { type: 'integer', example: 1 },
+          limit: { type: 'integer', example: 20 },
+          total: { type: 'integer', example: 100 },
+          totalPages: { type: 'integer', example: 5 },
         },
       },
       ErrorResponse: {
@@ -181,20 +196,134 @@ List APIs: \`?page=1&limit=20\` → response includes \`meta\` object.
           'score',
         ],
         properties: {
-          studentId: { type: 'string' },
-          academicYearId: { type: 'string' },
-          sessionId: { type: 'string' },
-          schoolClassId: { type: 'string' },
-          sectionId: { type: 'string' },
-          subjectId: { type: 'string' },
+          studentId: { type: 'string', pattern: '^[a-f0-9]{24}$' },
+          academicYearId: { type: 'string', pattern: '^[a-f0-9]{24}$' },
+          sessionId: { type: 'string', pattern: '^[a-f0-9]{24}$' },
+          schoolClassId: { type: 'string', pattern: '^[a-f0-9]{24}$' },
+          sectionId: { type: 'string', pattern: '^[a-f0-9]{24}$' },
+          subjectId: { type: 'string', pattern: '^[a-f0-9]{24}$' },
+          chapterId: { type: 'string', pattern: '^[a-f0-9]{24}$' },
           chapter: { type: 'string' },
           topic: { type: 'string' },
           ratedDate: { type: 'string', format: 'date' },
-          score: { type: 'number' },
-          maxScore: { type: 'number', default: 100 },
-          ratingType: { type: 'string', default: 'chapter_assessment' },
+          score: { type: 'number', minimum: 0 },
+          maxScore: { type: 'number', minimum: 1, default: 100 },
+          ratingType: {
+            type: 'string',
+            enum: [
+              'formative',
+              'summative',
+              'chapter_assessment',
+              'topic_quiz',
+              'assignment',
+              'project',
+              'oral',
+              'practical',
+              'unit_test',
+              'homework',
+            ],
+            default: 'chapter_assessment',
+          },
+          performance: {
+            type: 'string',
+            enum: ['excellent', 'very_good', 'good', 'satisfactory', 'needs_improvement', 'unsatisfactory'],
+          },
+          flag: {
+            type: 'string',
+            enum: ['normal', 'on_track', 'improvement_needed', 'concern', 'excellence', 'remedial'],
+          },
+          remarks: { type: 'string', maxLength: 2000 },
+          teacherId: { type: 'string', pattern: '^[a-f0-9]{24}$' },
+          status: { type: 'string', enum: ['draft', 'published', 'archived'], default: 'published' },
         },
       },
+      CreateSubscriptionPlanRequest: billingSchemas.createSubscriptionPlanRequest,
+      UpdateSubscriptionPlanRequest: billingSchemas.updateSubscriptionPlanRequest,
+      UpdateOrgBillingRequest: billingSchemas.updateOrgBillingRequest,
+      SetOrgPermissionsRequest: billingSchemas.setOrgPermissionsRequest,
+      AssignOrgPlanRequest: billingSchemas.assignOrgPlanRequest,
+      CreateOrgRoleRequest: billingSchemas.createOrgRoleRequest,
+      UpdateOrgRoleRequest: billingSchemas.updateOrgRoleRequest,
+      InitiatePlatformPaymentRequest: billingSchemas.initiatePlatformPaymentRequest,
+      VerifyRazorpayPaymentRequest: billingSchemas.verifyRazorpayPaymentRequest,
+      SubscriptionAccessSnapshot: billingSchemas.subscriptionAccessSnapshot,
+      BillingPreviewResponse: billingSchemas.billingPreviewResponse,
+      OrgSubscriptionDetailResponse: billingSchemas.orgSubscriptionDetailResponse,
+      PermissionCatalogItem: billingSchemas.permissionCatalogItem,
+      AuditLogEntry: billingSchemas.auditLogEntry,
+      OrganizationListItem: billingSchemas.organizationListItem,
+      // Domain request bodies
+      CreateOrganizationRequest: domainSchemas.createOrganizationRequest,
+      CreateSchoolRequest: domainSchemas.createSchoolRequest,
+      UpdateSchoolRequest: domainSchemas.updateSchoolRequest,
+      CreateStudentRequest: domainSchemas.createStudentRequest,
+      UpdateStudentRequest: domainSchemas.updateStudentRequest,
+      UpdateStudentAadhaarRequest: domainSchemas.updateStudentAadhaarRequest,
+      CreateEnrollmentRequest: domainSchemas.createEnrollmentRequest,
+      PromoteStudentRequest: domainSchemas.promoteStudentRequest,
+      CreateTeacherRequest: domainSchemas.createTeacherRequest,
+      UpdateTeacherRequest: domainSchemas.updateTeacherRequest,
+      CreateSubjectRequest: domainSchemas.createSubjectRequest,
+      UpdateSubjectRequest: domainSchemas.updateSubjectRequest,
+      CreateGuardianRequest: domainSchemas.createGuardianRequest,
+      LinkGuardianRequest: domainSchemas.linkGuardianRequest,
+      CreateAcademicYearRequest: domainSchemas.createAcademicYearRequest,
+      CreateSchoolClassRequest: domainSchemas.createSchoolClassRequest,
+      CreateSectionRequest: domainSchemas.createSectionRequest,
+      CreateTermRequest: domainSchemas.createTermRequest,
+      CreateChapterRequest: domainSchemas.createChapterRequest,
+      UpdateRatingRequest: domainSchemas.updateRatingRequest,
+      MarkAttendanceRequest: domainSchemas.markAttendanceRequest,
+      CreateExamRequest: domainSchemas.createExamRequest,
+      UpsertExamResultRequest: domainSchemas.upsertExamResultRequest,
+      CreateFeeCategoryRequest: domainSchemas.createFeeCategoryRequest,
+      CreateFeeStructureRequest: domainSchemas.createFeeStructureRequest,
+      CreateInvoiceRequest: domainSchemas.createInvoiceRequest,
+      AssignRoleRequest: domainSchemas.assignRoleRequest,
+      RefreshTokenRequest: domainSchemas.refreshTokenRequest,
+      JoinClassroomRequest: domainSchemas.joinClassroomRequest,
+      SubmitHomeworkRequest: domainSchemas.submitHomeworkRequest,
+      InitiateFeePaymentRequest: domainSchemas.initiateFeePaymentRequest,
+      // Domain entities / responses
+      Organization: domainSchemas.organization,
+      School: domainSchemas.school,
+      Student: domainSchemas.student,
+      StudentEnrollment: domainSchemas.studentEnrollment,
+      Teacher: domainSchemas.teacher,
+      Subject: domainSchemas.subject,
+      Guardian: domainSchemas.guardian,
+      StudentGuardianLink: domainSchemas.studentGuardianLink,
+      AcademicYear: domainSchemas.academicYear,
+      SchoolClass: domainSchemas.schoolClass,
+      Section: domainSchemas.section,
+      Term: domainSchemas.term,
+      AcademicStructure: domainSchemas.academicStructure,
+      SubjectChapter: domainSchemas.subjectChapter,
+      StudentRating: domainSchemas.studentRating,
+      RatingSummary: domainSchemas.ratingSummary,
+      Classroom: domainSchemas.classroom,
+      ClassroomMaterial: domainSchemas.classroomMaterial,
+      ClassroomInvite: domainSchemas.classroomInvite,
+      AttendanceRecord: domainSchemas.attendanceRecord,
+      Exam: domainSchemas.exam,
+      ExamResult: domainSchemas.examResult,
+      FeeCategory: domainSchemas.feeCategory,
+      FeeStructure: domainSchemas.feeStructure,
+      Invoice: domainSchemas.invoice,
+      PaymentInitiation: domainSchemas.paymentInitiation,
+      BillableSeats: domainSchemas.billableSeats,
+      Notification: domainSchemas.notification,
+      UserProfile: domainSchemas.userProfile,
+      LoginResponse: domainSchemas.loginResponse,
+      AuthContext: domainSchemas.authContext,
+      Role: domainSchemas.role,
+      UserRoleAssignment: domainSchemas.userRoleAssignment,
+      SubscriptionPlan: domainSchemas.subscriptionPlan,
+      DashboardStats: domainSchemas.dashboardStats,
+      ParentDashboard: domainSchemas.parentDashboard,
+      ParentChildDetail: domainSchemas.parentChildDetail,
+      AadhaarView: domainSchemas.aadhaarView,
+      RazorpayOnboardResult: domainSchemas.razorpayOnboardResult,
     },
   },
   paths: swaggerPaths,

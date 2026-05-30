@@ -20,6 +20,8 @@ const subscriptionPlanSchema = new mongoose.Schema(
     minUsers: { type: Number, default: 1 },
     maxSchools: Number,
     features: [planFeatureSchema],
+    /** Permissions included when an org is on this plan */
+    permissionIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Permission' }],
     isActive: { type: Boolean, default: true },
     razorpayPlanId: String,
   },

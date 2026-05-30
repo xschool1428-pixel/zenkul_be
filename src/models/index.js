@@ -4,6 +4,7 @@ export { School } from './School.js';
 export { SubscriptionPlan } from './SubscriptionPlan.js';
 export { OrganizationSubscription } from './OrganizationSubscription.js';
 export { Permission } from './Permission.js';
+export { OrganizationPermissionGrant } from './OrganizationPermissionGrant.js';
 export { Role } from './Role.js';
 export { UserSchool } from './UserSchool.js';
 export { OrganizationMember } from './OrganizationMember.js';

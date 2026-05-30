@@ -42,6 +42,14 @@ router.get(
   paymentController.getBillableSeats
 );
 
+router.get(
+  '/platform/billing-preview',
+  authenticate,
+  requireOrganizationContext,
+  assertOrganizationAccess,
+  paymentController.getBillingPreview
+);
+
 router.post(
   '/platform/initiate',
   authenticate,

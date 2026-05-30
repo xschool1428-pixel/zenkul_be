@@ -35,4 +35,10 @@ export const config = {
     platformFeePaise: parseInt(process.env.RAZORPAY_PLATFORM_FEE_PAISE || '0', 10),
     routeProductId: process.env.RAZORPAY_ROUTE_PRODUCT_ID,
   },
+  billing: {
+    /** Default ₹50 per active user per month */
+    defaultPricePerUserPaise: parseInt(process.env.DEFAULT_PRICE_PER_USER_PAISE || '5000', 10),
+    billingPeriodDays: parseInt(process.env.BILLING_PERIOD_DAYS || '30', 10),
+    gracePeriodDays: parseInt(process.env.GRACE_PERIOD_DAYS || '5', 10),
+  },
 };

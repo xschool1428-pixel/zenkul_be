@@ -4,13 +4,23 @@ import { authenticate } from '../middleware/auth.js';
 import { authorize } from '../middleware/authorize.js';
 import { validate } from '../middleware/validate.js';
 import { assertOrganizationReadAccess } from '../middleware/organizationAccess.js';
-import { createOrganizationSchema } from '../validators/domain.validators.js';
+import {
+  createOrganizationSchema,
+  listOrganizationsQuerySchema,
+} from '../validators/domain.validators.js';
 import Joi from 'joi';
 import { objectId } from '../validators/common.js';
 
 const router = Router();
 
 router.use(authenticate);
+
+router.get(
+  '/',
+  authorize('organization.manage'),
+  validate(listOrganizationsQuerySchema),
+  orgController.list
+);
 
 router.post(
   '/',
