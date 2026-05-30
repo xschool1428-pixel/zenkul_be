@@ -1,4 +1,4 @@
-import { SubscriptionPlan, Permission } from '../models/index.js';
+import { SubscriptionPlan, Permission, OrganizationSubscription } from '../models/index.js';
 import { NotFoundError, BadRequestError } from '../utils/errors.js';
 import { assertPermissionIdsExist } from './permissionCatalog.service.js';
 import { syncGrantsFromPlan } from './organizationEntitlement.service.js';
